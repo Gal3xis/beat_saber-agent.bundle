@@ -2,7 +2,7 @@ import json
 import urllib2
 import re
 import os
-import configparser
+import ConfigParser
 
 def Start():
     Log("Plugin gestartet.")
@@ -91,19 +91,19 @@ class Map:
 
     def initFromLocal(self, id):
         path = 'SongMetadata.ini'
-        config = configparser.ConfigParser()
+        config = ConfigParser.ConfigParser()
         config.read(path)
 
         self.id = id
-        self.url = config[id]['url']
-        self.mapName = config[id]['mapName']
-        self.mapDesciption = config[id]['mapDesciption']
-        self.songName = config[id]['songName']
-        self.songAuthors = config[id]['songAuthors']
-        self.levelAuthors = config[id]['levelAuthors']
-        self.bpm = config[id]['bpm']
-        self.duration = config[id]['duration']
-        self.poster = config[id]['poster']
+        self.url = config.get(id, 'url')
+        self.mapName = config.get(id, 'mapName')
+        self.mapDesciption = config.get(id, 'mapDesciption')
+        self.songName = config.get(id, 'songName')
+        self.songAuthors = config.get(id, 'songAuthors')
+        self.levelAuthors = config.get(id, 'levelAuthors')
+        self.bpm = config.get(id, 'bpm')
+        self.duration = config.get(id, 'duration')
+        self.poster = config.get(id, 'poster')
 
     def initFromBeatSaver(self,id):
         self.id = id
