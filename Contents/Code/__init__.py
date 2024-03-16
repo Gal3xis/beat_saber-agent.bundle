@@ -2,6 +2,7 @@ import json
 import urllib2
 import re
 import os
+import configparser
 
 def Start():
     Log("Plugin gestartet.")
@@ -58,23 +59,16 @@ class PersonalShowsAgent(Agent.Movies):
                     role.name = author
                 metadata.posters[map.poster] = Proxy.Media(HTTP.Request(map.poster))
                 metadata.art[map.poster] = Proxy.Media(HTTP.Request(map.poster))
-                try:
-                    Log("Find score for map {}".format(map.mapName))
-                    mapScore = ScoreSaberScore(map.hash,score)
-                    metadata.summary = "{}\n{}".format("https://beatsaver.com/maps/{}".format(map.id),mapScore)
-                    metadata.content_rating = str(mapScore.rating)
-                    metadata.rating = float(mapScore.accuracy)*10
-                    metadata.rating_image = 'https://uxwing.com/wp-content/themes/uxwing/download/seo-marketing/accurate-icon.png'
-                    
-                except Exception as e:
-                    raise Exception("Score wurde nicht gefunden:\n Map: {}\nMapHash: {}\nScore: {}\n".format(map.mapName,map.hash,score)) 
-                Log.Info("Title: {}".format(metadata.title))
-                Log.Info("original_title: {}".format(metadata.original_title))
-                Log.Info("year: {}".format(metadata.year))
-                Log.Info("roles: {}".format(metadata.roles))
-                Log.Info("rating: {}".format(metadata.rating))
-                Log.Info("tagline: {}".format(metadata.tagline))
-                Log.Info("content_rating: {}".format(metadata.content_rating))
+                if map.hash != null:
+                    try:
+                        Log("Find score for map {}".format(map.mapName))
+                        mapScore = ScoreSaberScore(map.hash,score)
+                        metadata.summary = "{}\n{}".format("https://beatsaver.com/maps/{}".format(map.id),mapScore)
+                        metadata.content_rating = str(mapScore.rating)
+                        metadata.rating = float(mapScore.accuracy)*10
+                        metadata.rating_image = 'https://uxwing.com/wp-content/themes/uxwing/download/seo-marketing/accurate-icon.png'
+                    except Exception as e:
+                        raise Exception("Score wurde nicht gefunden:\n Map: {}\nMapHash: {}\nScore: {}\n".format(map.mapName,map.hash,score))
                 
     
 def getIdFromFilename(filename):
@@ -90,6 +84,28 @@ def getScoreFromFilename(filename):
     
 class Map:
     def __init__(self,id):
+        if id[0] == '#':
+            self.initFromLocal(id)
+        else:
+            self.initFromBeatSaver(id)
+
+    def initFromLocal(self, id):
+        path = 'SongMetadata.ini'
+        config = configparser.ConfigParser()
+        config.read(path)
+
+        self.id = id
+        self.url = config[id]['url']
+        self.mapName = config[id]['mapName']
+        self.mapDesciption = config[id]['mapDesciption']
+        self.songName = config[id]['songName']
+        self.songAuthors = config[id]['songAuthors']
+        self.levelAuthors = config[id]['levelAuthors']
+        self.bpm = config[id]['bpm']
+        self.duration = config[id]['duration']
+        self.poster = config[id]['poster']
+
+    def initFromBeatSaver(self,id):
         self.id = id
         self.url = beatSaverBaseUrl.format(self.id)
         request = urllib2.Request(self.url, headers={"Accept": "application/json"})
@@ -105,7 +121,7 @@ class Map:
             self.duration = mapJson['metadata']['duration']
             self.upvotes = mapJson['stats']['upvotes']
             self.downvotes = mapJson['stats']['downvotes']
-            self.rating = float(float(self.upvotes)/(float(self.upvotes)+float(self.downvotes)))
+            self.rating = float(float(self.upvotes) / (float(self.upvotes) + float(self.downvotes)))
             self.poster = mapJson['versions'][0]['coverURL']
             self.hash = mapJson['versions'][0]['hash']
         except urllib2.HTTPError as e:
@@ -114,7 +130,8 @@ class Map:
             print("URL Error:", e.reason)
         except Exception as e:
             print("General Error:", e)
-            
+
+
     def seperateAuthors(self,authors):
         unified_string = authors.replace(" & ", ", ")
         return unified_string.split(", ")     
