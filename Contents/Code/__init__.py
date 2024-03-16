@@ -90,7 +90,7 @@ class Map:
             self.initFromBeatSaver(id)
 
     def initFromLocal(self, id):
-        path = 'SongMetadata.ini'
+        path = os.path.join('..','SongMetadata','SongMetadata.ini')
         config = ConfigParser.ConfigParser()
         config.read(path)
 
